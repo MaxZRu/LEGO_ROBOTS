@@ -50,7 +50,7 @@
       text-align: center;
       font-weight: 800;
       letter-spacing: 2px;
-      margin: 8px 0 16px;
+      margin: 0 0 16px;
     }
     .row {
       display: flex;
@@ -84,6 +84,22 @@
       padding: 8px 12px;
       min-height: 38px;
     }
+    .fullscreen-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 12px;
+    }
+    .fullscreen-row .btn-fullscreen {
+      flex: 1 1 calc(50% - 5px);
+      min-width: 0;
+      min-height: 48px;
+      font-size: 15px;
+      background: #37474f;
+    }
+    .btn-fullscreen:disabled {
+      opacity: 0.45;
+    }
     .slider-wrap {
       display: grid;
       gap: 6px;
@@ -101,7 +117,7 @@
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 12px;
-      margin-top: 8px;
+      margin-top: 0;
     }
     .score {
       border-radius: 10px;
@@ -205,7 +221,6 @@
 <body>
   <main class="wrap">
     <section class="panel">
-      <h2 class="title">Счёт</h2>
       <div class="score-wrap">
         <div class="score red">
           <div class="name">Красные</div>
@@ -227,7 +242,6 @@
     </section>
 
     <section class="panel">
-      <h2 class="title">Главный таймер</h2>
       <div id="mainClock" class="main-clock">05:00</div>
 
       <button id="mainToggleBtn" class="btn-main">Старт</button>
@@ -288,6 +302,10 @@
         </label>
         <button id="testWhistleBtn" class="btn-reset" style="background:#607d8b;">Тест свистка</button>
       </div>
+      <div class="fullscreen-row">
+        <button type="button" id="fullscreenEnterBtn" class="btn-fullscreen">На весь экран</button>
+        <button type="button" id="fullscreenExitBtn" class="btn-fullscreen">Выйти из полноэкранного</button>
+      </div>
     </section>
 
     <section class="panel">
@@ -344,6 +362,8 @@
       statusText: document.getElementById("statusText"),
       alertMode: document.getElementById("alertMode"),
       testWhistleBtn: document.getElementById("testWhistleBtn"),
+      fullscreenEnterBtn: document.getElementById("fullscreenEnterBtn"),
+      fullscreenExitBtn: document.getElementById("fullscreenExitBtn"),
 
       redCircle: document.getElementById("redCircle"),
       blueCircle: document.getElementById("blueCircle"),
@@ -804,9 +824,90 @@
       ui.blueScore.textContent = String(state.score.blue);
     }
 
+    function getFullscreenElement() {
+      return (
+        document.fullscreenElement ||
+        document.webkitFullscreenElement ||
+        document.mozFullScreenElement ||
+        document.msFullscreenElement ||
+        null
+      );
+    }
+
+    function isFullscreenSupported() {
+      const el = document.documentElement;
+      return !!(
+        el.requestFullscreen ||
+        el.webkitRequestFullscreen ||
+        el.mozRequestFullScreen ||
+        el.msRequestFullscreen
+      );
+    }
+
+    function updateFullscreenButtons() {
+      const supported = isFullscreenSupported();
+      const active = !!getFullscreenElement();
+      if (ui.fullscreenEnterBtn) {
+        ui.fullscreenEnterBtn.disabled = !supported || active;
+        if (!supported) ui.fullscreenEnterBtn.title = "Не поддерживается в этом браузере";
+        else ui.fullscreenEnterBtn.removeAttribute("title");
+      }
+      if (ui.fullscreenExitBtn) {
+        ui.fullscreenExitBtn.disabled = !supported || !active;
+        if (!supported) ui.fullscreenExitBtn.title = "Не поддерживается в этом браузере";
+        else ui.fullscreenExitBtn.removeAttribute("title");
+      }
+    }
+
+    async function enterFullscreen() {
+      const root = document.documentElement;
+      if (getFullscreenElement()) return;
+      try {
+        if (root.requestFullscreen) await root.requestFullscreen();
+        else if (root.webkitRequestFullscreen) root.webkitRequestFullscreen();
+        else if (root.mozRequestFullScreen) root.mozRequestFullScreen();
+        else if (root.msRequestFullscreen) root.msRequestFullscreen();
+        logAction("Полноэкранный режим");
+      } catch (err) {
+        console.error(err);
+        setStatus("Полноэкранный режим недоступен в этом браузере");
+        logAction("Ошибка полноэкранного режима");
+      }
+      updateFullscreenButtons();
+    }
+
+    async function exitFullscreen() {
+      if (!getFullscreenElement()) return;
+      try {
+        if (document.exitFullscreen) await document.exitFullscreen();
+        else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+        else if (document.mozCancelFullScreen) document.mozCancelFullScreen();
+        else if (document.msExitFullscreen) document.msExitFullscreen();
+        logAction("Выход из полноэкранного режима");
+      } catch (err) {
+        console.error(err);
+        setStatus("Не удалось выйти из полноэкранного режима");
+        logAction("Ошибка выхода из полноэкранного режима");
+      }
+      updateFullscreenButtons();
+    }
+
     function addDomListeners() {
       document.body.addEventListener("click", ensureAudioContext, { once: true });
       document.body.addEventListener("keydown", ensureAudioContext, { once: true });
+
+      if (ui.fullscreenEnterBtn && ui.fullscreenExitBtn) {
+        ui.fullscreenEnterBtn.addEventListener("click", () => {
+          enterFullscreen();
+        });
+        ui.fullscreenExitBtn.addEventListener("click", () => {
+          exitFullscreen();
+        });
+        ["fullscreenchange", "webkitfullscreenchange", "mozfullscreenchange", "MSFullscreenChange"].forEach((evt) => {
+          document.addEventListener(evt, updateFullscreenButtons);
+        });
+        updateFullscreenButtons();
+      }
 
       ui.mainToggleBtn.addEventListener("click", () => {
         if (state.main.isRunning) {
