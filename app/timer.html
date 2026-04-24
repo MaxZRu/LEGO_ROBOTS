@@ -283,15 +283,16 @@
 
     <section id="penaltyPanel" class="panel penalty-panel">
       <h2 class="title">Штрафные таймеры (1 минута)</h2>
+      <p class="subtle" style="margin: -4px 0 10px;">Нажатие — старт с нуля; ещё раз во время отсчёта — сброс до полной минуты.</p>
       <div class="circles penalty-circles">
         <div class="circle-card">
-          <div id="redCircle" class="circle red" role="button" tabindex="0" aria-label="Штраф красных">
+          <div id="redCircle" class="circle red" role="button" tabindex="0" aria-label="Штраф красных: старт с полной минуты, повторное нажатие — сброс">
             <div id="redSec" class="sec">60</div>
           </div>
           <div class="circle-label">Красные</div>
         </div>
         <div class="circle-card">
-          <div id="blueCircle" class="circle blue" role="button" tabindex="0" aria-label="Штраф синих">
+          <div id="blueCircle" class="circle blue" role="button" tabindex="0" aria-label="Штраф синих: старт с полной минуты, повторное нажатие — сброс">
             <div id="blueSec" class="sec">60</div>
           </div>
           <div class="circle-label">Синие</div>
@@ -744,13 +745,15 @@
       render();
     }
 
-    function startPenalty(timerObj, teamName) {
-      if (!state.main.isRunning) {
-        setStatus("Сначала запустите главный таймер, затем штрафной.");
-        logAction(`Попытка запустить штрафной таймер (${teamName}) при остановленном главном`);
-        render();
-        return;
-      }
+    function resetPenaltyToIdle(timerObj) {
+      timerObj.remainingMs = timerObj.durationMs;
+      timerObj.isRunning = false;
+      timerObj.targetEndTs = null;
+      timerObj.alertedDone = false;
+      timerObj.pausedByMain = false;
+    }
+
+    function startPenaltyFromFull(timerObj, teamName) {
       timerObj.remainingMs = timerObj.durationMs;
       timerObj.isRunning = true;
       timerObj.targetEndTs = Date.now() + timerObj.durationMs;
@@ -760,6 +763,33 @@
       logAction(`Запущен штрафной таймер: ${teamName}`);
       saveState();
       render();
+    }
+
+    function togglePenalty(timerObj, teamName) {
+      if (timerObj.isRunning) {
+        resetPenaltyToIdle(timerObj);
+        setStatus(`Штрафной сброшен (${teamName}). Нажмите снова для старта с полной минуты.`);
+        logAction(`Штрафной таймер сброшен: ${teamName}`);
+        saveState();
+        render();
+        return;
+      }
+      if (!state.main.isRunning) {
+        const atFullMinute = timerObj.remainingMs >= timerObj.durationMs;
+        if (!atFullMinute) {
+          resetPenaltyToIdle(timerObj);
+          setStatus(`Штрафной сброшен до полной минуты (${teamName}). Запустите главный таймер для отсчёта.`);
+          logAction(`Штрафной таймер сброшен до полной минуты: ${teamName}`);
+          saveState();
+          render();
+          return;
+        }
+        setStatus("Сначала запустите главный таймер, затем штрафной.");
+        logAction(`Попытка запустить штрафной таймер (${teamName}) при остановленном главном`);
+        render();
+        return;
+      }
+      startPenaltyFromFull(timerObj, teamName);
     }
 
     function startRestartTimer() {
@@ -987,10 +1017,20 @@
         saveState();
       });
 
-      ui.redCircle.addEventListener("click", () => startPenalty(state.redPenalty, "Красные"));
-      ui.blueCircle.addEventListener("click", () => startPenalty(state.bluePenalty, "Синие"));
-      ui.redCircle.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") startPenalty(state.redPenalty, "Красные"); });
-      ui.blueCircle.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") startPenalty(state.bluePenalty, "Синие"); });
+      ui.redCircle.addEventListener("click", () => togglePenalty(state.redPenalty, "Красные"));
+      ui.blueCircle.addEventListener("click", () => togglePenalty(state.bluePenalty, "Синие"));
+      ui.redCircle.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          togglePenalty(state.redPenalty, "Красные");
+        }
+      });
+      ui.blueCircle.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          togglePenalty(state.bluePenalty, "Синие");
+        }
+      });
 
       ui.restartCircle.addEventListener("click", startRestartTimer);
       ui.restartCircle.addEventListener("keydown", (e) => {
