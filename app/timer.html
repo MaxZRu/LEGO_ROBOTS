@@ -142,6 +142,34 @@
     .penalty-circles {
       grid-template-columns: repeat(2, minmax(0, 1fr));
     }
+    .penalty-panel {
+      position: relative;
+      transition: opacity 0.18s ease, filter 0.18s ease;
+    }
+    .penalty-panel.main-paused .penalty-circles,
+    .penalty-panel.main-paused .circle-label {
+      opacity: 0.45;
+      filter: saturate(0.75);
+    }
+    .penalty-overlay {
+      position: absolute;
+      inset: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 12px;
+      border-radius: 12px;
+      background: rgba(9, 11, 14, 0.38);
+      color: #f4f7fb;
+      font-size: 16px;
+      font-weight: 700;
+      letter-spacing: 0.2px;
+      pointer-events: none;
+    }
+    .penalty-panel.main-paused .penalty-overlay {
+      display: flex;
+    }
     .circle-card {
       display: grid;
       justify-items: center;
@@ -253,7 +281,7 @@
       <div id="statusText" class="alert"></div>
     </section>
 
-    <section class="panel">
+    <section id="penaltyPanel" class="panel penalty-panel">
       <h2 class="title">Штрафные таймеры (1 минута)</h2>
       <div class="circles penalty-circles">
         <div class="circle-card">
@@ -269,6 +297,7 @@
           <div class="circle-label">Синие</div>
         </div>
       </div>
+      <div id="penaltyOverlay" class="penalty-overlay">Штрафные таймеры ждут запуск главного таймера</div>
     </section>
 
     <section class="panel">
@@ -369,6 +398,8 @@
       blueCircle: document.getElementById("blueCircle"),
       redSec: document.getElementById("redSec"),
       blueSec: document.getElementById("blueSec"),
+      penaltyPanel: document.getElementById("penaltyPanel"),
+      penaltyOverlay: document.getElementById("penaltyOverlay"),
 
       restartCircle: document.getElementById("restartCircle"),
       restartSec: document.getElementById("restartSec"),
@@ -714,6 +745,12 @@
     }
 
     function startPenalty(timerObj, teamName) {
+      if (!state.main.isRunning) {
+        setStatus("Сначала запустите главный таймер, затем штрафной.");
+        logAction(`Попытка запустить штрафной таймер (${teamName}) при остановленном главном`);
+        render();
+        return;
+      }
       timerObj.remainingMs = timerObj.durationMs;
       timerObj.isRunning = true;
       timerObj.targetEndTs = Date.now() + timerObj.durationMs;
@@ -817,6 +854,12 @@
       ui.blueSec.textContent = formatSeconds(state.bluePenalty.remainingMs);
       setCircleProgress(ui.redCircle, state.redPenalty.remainingMs, state.redPenalty.durationMs);
       setCircleProgress(ui.blueCircle, state.bluePenalty.remainingMs, state.bluePenalty.durationMs);
+      if (ui.penaltyPanel) {
+        ui.penaltyPanel.classList.toggle("main-paused", !state.main.isRunning);
+      }
+      if (ui.penaltyOverlay) {
+        ui.penaltyOverlay.setAttribute("aria-hidden", state.main.isRunning ? "true" : "false");
+      }
 
       ui.restartSec.textContent = formatSeconds(state.restart.remainingMs);
       setCircleProgress(ui.restartCircle, state.restart.remainingMs, state.restart.durationMs);
