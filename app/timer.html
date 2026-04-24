@@ -1,0 +1,878 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Футбол LEGO — Судейский таймер</title>
+  <style>
+    :root {
+      --bg: #121417;
+      --panel: #1a1f26;
+      --text: #f3f5f7;
+      --muted: #aeb7c2;
+      --accent: #ffd43b;
+      --danger: #e53935;
+      --blue: #1e88e5;
+      --ok: #2e7d32;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+    .wrap {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 18px;
+      display: grid;
+      gap: 16px;
+    }
+    .panel {
+      background: var(--panel);
+      border: 1px solid #2a303a;
+      border-radius: 12px;
+      padding: 14px;
+    }
+    .title {
+      margin: 0 0 10px;
+      font-size: 20px;
+      font-weight: 700;
+    }
+    .subtle {
+      color: var(--muted);
+      font-size: 13px;
+    }
+    .main-clock {
+      font-size: clamp(56px, 11vw, 128px);
+      text-align: center;
+      font-weight: 800;
+      letter-spacing: 2px;
+      margin: 8px 0 16px;
+    }
+    .row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px;
+    }
+    .spacer { flex: 1; }
+    button {
+      border: 0;
+      border-radius: 10px;
+      cursor: pointer;
+      font-weight: 700;
+      color: #fff;
+      padding: 10px 14px;
+    }
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    .btn-main {
+      width: 100%;
+      min-height: 92px;
+      font-size: 38px;
+      background: var(--ok);
+    }
+    .btn-main.paused { background: #f57c00; }
+    .btn-reset {
+      background: #5f6670;
+      font-size: 14px;
+      padding: 8px 12px;
+      min-height: 38px;
+    }
+    .slider-wrap {
+      display: grid;
+      gap: 6px;
+      width: 340px;
+      max-width: 100%;
+    }
+    input[type="range"] { width: 100%; }
+
+    .two-col {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 12px;
+    }
+    .score-wrap {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 8px;
+    }
+    .score {
+      border-radius: 10px;
+      padding: 10px;
+      text-align: center;
+    }
+    .score.red { background: rgba(229, 57, 53, 0.15); border: 1px solid rgba(229, 57, 53, 0.6); }
+    .score.blue { background: rgba(30, 136, 229, 0.15); border: 1px solid rgba(30, 136, 229, 0.6); }
+    .score .name { font-size: 18px; font-weight: 700; }
+    .score .value { font-size: 56px; font-weight: 800; margin: 8px 0; }
+    .score .controls { display: flex; justify-content: center; gap: 8px; }
+    .score button { min-width: 56px; font-size: 24px; }
+    .score.red button { background: var(--danger); }
+    .score.blue button { background: var(--blue); }
+
+    .circles {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 14px;
+      margin-top: 8px;
+    }
+    .circle-card {
+      display: grid;
+      justify-items: center;
+      gap: 8px;
+      text-align: center;
+    }
+    .circle {
+      --progress: 100%;
+      width: 180px;
+      height: 180px;
+      border-radius: 50%;
+      border: 5px solid #303846;
+      display: grid;
+      place-items: center;
+      cursor: pointer;
+      user-select: none;
+      background:
+        radial-gradient(circle at center, #202733 58%, transparent 59%),
+        conic-gradient(var(--ring-color) var(--progress), #303846 var(--progress));
+      box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.35);
+    }
+    .circle .sec {
+      font-size: 54px;
+      font-weight: 800;
+      line-height: 1;
+    }
+    .circle.red { --ring-color: var(--danger); }
+    .circle.blue { --ring-color: var(--blue); }
+    .circle-label {
+      font-size: 16px;
+      font-weight: 700;
+    }
+
+    .circle.restart { --ring-color: #8e24aa; }
+
+    .pill {
+      border-radius: 999px;
+      border: 1px solid #3a424f;
+      color: var(--muted);
+      padding: 4px 10px;
+      font-size: 12px;
+    }
+    .alert {
+      font-size: 14px;
+      margin-top: 8px;
+      min-height: 20px;
+      color: var(--accent);
+    }
+    .log-wrap {
+      margin-top: 8px;
+      max-height: 280px;
+      overflow: auto;
+      border: 1px solid #2a303a;
+      border-radius: 10px;
+      background: #151a21;
+    }
+    .log-list {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+    }
+    .log-list li {
+      padding: 8px 10px;
+      border-bottom: 1px solid #242b35;
+      font-size: 14px;
+    }
+    .log-list li:last-child {
+      border-bottom: 0;
+    }
+    .log-time {
+      color: var(--muted);
+      margin-right: 8px;
+      font-variant-numeric: tabular-nums;
+    }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <section class="panel">
+      <h1 class="title">Судейская панель — Футбол LEGO</h1>
+      <div class="subtle">Состояние автоматически сохраняется и восстанавливается по системному времени устройства.</div>
+    </section>
+
+    <section class="panel">
+      <h2 class="title">Главный таймер</h2>
+      <div id="mainClock" class="main-clock">05:00</div>
+
+      <button id="mainToggleBtn" class="btn-main">Старт</button>
+      <div class="row" style="margin-top: 10px;">
+        <button id="mainResetBtn" class="btn-reset">Сброс</button>
+        <span class="pill">Пауза/возобновление со свистком</span>
+      </div>
+
+      <div class="row" style="margin-top: 12px;">
+        <div class="slider-wrap">
+          <label for="mainSetRange">Установить время: <strong id="rangeLabel">05:00</strong></label>
+          <input id="mainSetRange" type="range" min="12" max="300" step="1" value="300">
+        </div>
+        <div class="spacer"></div>
+        <label style="display:flex;align-items:center;gap:6px;">
+          <span class="subtle">Оповещение:</span>
+          <select id="alertMode">
+            <option value="sound">Только звук</option>
+            <option value="soundVoice">Звук + голос</option>
+          </select>
+        </label>
+        <button id="testWhistleBtn" class="btn-reset" style="background:#607d8b;">Тест свистка</button>
+      </div>
+      <div id="statusText" class="alert"></div>
+    </section>
+
+    <section class="panel">
+      <h2 class="title">Штрафные таймеры (1 минута)</h2>
+      <div class="subtle">Нажми на круг, чтобы запустить/перезапустить 60 секунд. В центре показываются оставшиеся секунды.</div>
+      <div class="circles">
+        <div class="circle-card">
+          <div id="redCircle" class="circle red" role="button" tabindex="0" aria-label="Штраф красных">
+            <div id="redSec" class="sec">60</div>
+          </div>
+          <div class="circle-label">Красные</div>
+        </div>
+        <div class="circle-card">
+          <div id="blueCircle" class="circle blue" role="button" tabindex="0" aria-label="Штраф синих">
+            <div id="blueSec" class="sec">60</div>
+          </div>
+          <div class="circle-label">Синие</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel two-col">
+      <div>
+        <h2 class="title">Контроль до рестарта</h2>
+        <div class="subtle">Нажми на круг, чтобы запустить/перезапустить 10 секунд.</div>
+        <div class="circles" style="margin-top: 12px; grid-template-columns: minmax(220px, 260px);">
+          <div class="circle-card">
+            <div id="restartCircle" class="circle restart" role="button" tabindex="0" aria-label="Контроль до рестарта">
+              <div id="restartSec" class="sec">10</div>
+            </div>
+            <div class="circle-label">Рестарт</div>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <h2 class="title">Счёт</h2>
+        <div class="score-wrap">
+          <div class="score red">
+            <div class="name">Красные</div>
+            <div id="redScore" class="value">0</div>
+            <div class="controls">
+              <button id="redMinus">-</button>
+              <button id="redPlus">+</button>
+            </div>
+          </div>
+          <div class="score blue">
+            <div class="name">Синие</div>
+            <div id="blueScore" class="value">0</div>
+            <div class="controls">
+              <button id="blueMinus">-</button>
+              <button id="bluePlus">+</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="row">
+        <h2 class="title" style="margin: 0;">Журнал действий</h2>
+        <div class="spacer"></div>
+        <button id="clearLogBtn" class="btn-reset">Очистить журнал</button>
+      </div>
+      <div class="subtle">Логируются действия судьи и ключевые события таймеров.</div>
+      <div class="log-wrap">
+        <ul id="actionLogList" class="log-list"></ul>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const STORAGE_KEY = "legoFootballJudgeStateV1";
+    const LOG_STORAGE_KEY = "legoFootballJudgeLogV1";
+
+    const MAIN_MIN_SECONDS = 12;
+    const MAIN_MAX_SECONDS = 300;
+    const ONE_MINUTE_MS = 60000;
+    const RESTART_MS = 10000;
+
+    const defaultState = {
+      main: {
+        setSeconds: 300,
+        remainingMs: 300000,
+        isRunning: false,
+        targetEndTs: null,
+        alertedDone: false
+      },
+      redPenalty: { durationMs: ONE_MINUTE_MS, remainingMs: ONE_MINUTE_MS, isRunning: false, targetEndTs: null, alertedDone: false, pausedByMain: false },
+      bluePenalty: { durationMs: ONE_MINUTE_MS, remainingMs: ONE_MINUTE_MS, isRunning: false, targetEndTs: null, alertedDone: false, pausedByMain: false },
+      restart: { durationMs: RESTART_MS, remainingMs: RESTART_MS, isRunning: false, targetEndTs: null, alertedDone: false },
+      score: { red: 0, blue: 0 },
+      settings: { alertMode: "sound" }
+    };
+
+    let state = loadState();
+    let audioCtx = null;
+    let mainLastCountdownBeepSecond = null;
+    let mainSpeechTimerId = null;
+    let intervalId = null;
+    const MAX_LOG_ITEMS = 200;
+    const actionLog = loadActionLog();
+
+    const ui = {
+      mainClock: document.getElementById("mainClock"),
+      mainToggleBtn: document.getElementById("mainToggleBtn"),
+      mainResetBtn: document.getElementById("mainResetBtn"),
+      mainSetRange: document.getElementById("mainSetRange"),
+      rangeLabel: document.getElementById("rangeLabel"),
+      statusText: document.getElementById("statusText"),
+      alertMode: document.getElementById("alertMode"),
+      testWhistleBtn: document.getElementById("testWhistleBtn"),
+
+      redCircle: document.getElementById("redCircle"),
+      blueCircle: document.getElementById("blueCircle"),
+      redSec: document.getElementById("redSec"),
+      blueSec: document.getElementById("blueSec"),
+
+      restartCircle: document.getElementById("restartCircle"),
+      restartSec: document.getElementById("restartSec"),
+
+      redScore: document.getElementById("redScore"),
+      blueScore: document.getElementById("blueScore"),
+      redMinus: document.getElementById("redMinus"),
+      redPlus: document.getElementById("redPlus"),
+      blueMinus: document.getElementById("blueMinus"),
+      bluePlus: document.getElementById("bluePlus"),
+      actionLogList: document.getElementById("actionLogList"),
+      clearLogBtn: document.getElementById("clearLogBtn")
+    };
+
+    function deepClone(obj) {
+      return JSON.parse(JSON.stringify(obj));
+    }
+
+    function clamp(value, min, max) {
+      return Math.max(min, Math.min(max, value));
+    }
+
+    function formatMmSs(ms) {
+      const totalSec = Math.max(0, Math.ceil(ms / 1000));
+      const m = Math.floor(totalSec / 60);
+      const s = totalSec % 60;
+      return String(m).padStart(2, "0") + ":" + String(s).padStart(2, "0");
+    }
+
+    function formatSeconds(ms) {
+      return String(Math.max(0, Math.ceil(ms / 1000)));
+    }
+
+    function formatTimeNow() {
+      const now = new Date();
+      const hh = String(now.getHours()).padStart(2, "0");
+      const mm = String(now.getMinutes()).padStart(2, "0");
+      const ss = String(now.getSeconds()).padStart(2, "0");
+      return `${hh}:${mm}:${ss}`;
+    }
+
+    function logAction(text) {
+      actionLog.unshift({ ts: formatTimeNow(), text });
+      if (actionLog.length > MAX_LOG_ITEMS) {
+        actionLog.length = MAX_LOG_ITEMS;
+      }
+      saveActionLog();
+      renderActionLog();
+    }
+
+    function renderActionLog() {
+      if (!ui.actionLogList) return;
+      ui.actionLogList.innerHTML = "";
+
+      for (const entry of actionLog) {
+        const li = document.createElement("li");
+        const time = document.createElement("span");
+        time.className = "log-time";
+        time.textContent = entry.ts;
+        li.appendChild(time);
+        li.append(document.createTextNode(entry.text));
+        ui.actionLogList.appendChild(li);
+      }
+    }
+
+    function saveState() {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      } catch (err) {
+        console.error("Ошибка сохранения состояния:", err);
+      }
+    }
+
+    function saveActionLog() {
+      try {
+        localStorage.setItem(LOG_STORAGE_KEY, JSON.stringify(actionLog));
+      } catch (err) {
+        console.error("Ошибка сохранения журнала:", err);
+      }
+    }
+
+    function loadActionLog() {
+      try {
+        const raw = localStorage.getItem(LOG_STORAGE_KEY);
+        if (!raw) return [];
+        const parsed = JSON.parse(raw);
+        if (!Array.isArray(parsed)) return [];
+        return parsed
+          .filter((entry) => entry && typeof entry.ts === "string" && typeof entry.text === "string")
+          .slice(0, MAX_LOG_ITEMS);
+      } catch (err) {
+        console.error("Ошибка загрузки журнала, использую пустой журнал:", err);
+        return [];
+      }
+    }
+
+    function applySystemTimeRecovery(timer) {
+      if (!timer.isRunning || !timer.targetEndTs) return;
+      const now = Date.now();
+      timer.remainingMs = Math.max(0, timer.targetEndTs - now);
+      if (timer.remainingMs <= 0) {
+        timer.isRunning = false;
+        timer.targetEndTs = null;
+      }
+    }
+
+    function loadState() {
+      const fresh = deepClone(defaultState);
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return fresh;
+        const parsed = JSON.parse(raw);
+
+        const next = {
+          main: { ...fresh.main, ...(parsed.main || {}) },
+          redPenalty: { ...fresh.redPenalty, ...(parsed.redPenalty || {}) },
+          bluePenalty: { ...fresh.bluePenalty, ...(parsed.bluePenalty || {}) },
+          restart: { ...fresh.restart, ...(parsed.restart || {}) },
+          score: { ...fresh.score, ...(parsed.score || {}) },
+          settings: { ...fresh.settings, ...(parsed.settings || {}) }
+        };
+
+        next.main.setSeconds = clamp(Number(next.main.setSeconds) || 300, MAIN_MIN_SECONDS, MAIN_MAX_SECONDS);
+        next.main.remainingMs = clamp(Number(next.main.remainingMs) || (next.main.setSeconds * 1000), 0, MAIN_MAX_SECONDS * 1000);
+        next.score.red = Math.max(0, Number(next.score.red) || 0);
+        next.score.blue = Math.max(0, Number(next.score.blue) || 0);
+
+        applySystemTimeRecovery(next.main);
+        applySystemTimeRecovery(next.redPenalty);
+        applySystemTimeRecovery(next.bluePenalty);
+        applySystemTimeRecovery(next.restart);
+
+        return next;
+      } catch (err) {
+        console.error("Ошибка загрузки состояния, использую defaults:", err);
+        return fresh;
+      }
+    }
+
+    function ensureAudioContext() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      if (audioCtx.state === "suspended") {
+        audioCtx.resume().catch(() => {});
+      }
+    }
+
+    function playWhistleBeep(freq = 1200, startDelaySec = 0) {
+      ensureAudioContext();
+      if (!audioCtx) return;
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      const now = audioCtx.currentTime + startDelaySec;
+      const durationSec = 0.7;
+      const end = now + durationSec;
+
+      osc.type = "square";
+      osc.frequency.setValueAtTime(freq, now);
+
+      gain.gain.setValueAtTime(0.0001, now);
+      gain.gain.linearRampToValueAtTime(0.26, now + 0.002);
+      gain.gain.setValueAtTime(0.26, end - 0.012);
+      gain.gain.linearRampToValueAtTime(0.0001, end);
+
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start(now);
+      osc.stop(end + 0.01);
+    }
+
+    function playFlatBeep(freq, durationSec, gainValue, startDelaySec = 0, waveType = "square") {
+      ensureAudioContext();
+      if (!audioCtx) return;
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      const now = audioCtx.currentTime + startDelaySec;
+      const end = now + durationSec;
+
+      osc.type = waveType;
+      osc.frequency.setValueAtTime(freq, now);
+
+      gain.gain.setValueAtTime(0.0001, now);
+      gain.gain.linearRampToValueAtTime(gainValue, now + 0.002);
+      gain.gain.setValueAtTime(gainValue, end - 0.012);
+      gain.gain.linearRampToValueAtTime(0.0001, end);
+
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start(now);
+      osc.stop(end + 0.01);
+    }
+
+    function playDoubleWhistleBeep(freq = 1200) {
+      playWhistleBeep(freq, 0);
+      playWhistleBeep(freq, 0.72);
+    }
+
+    function tone(freq, durationMs, gainValue, startDelaySec, options = {}) {
+      if (!audioCtx) return;
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      const now = audioCtx.currentTime + (startDelaySec || 0);
+      const endFreq = options.endFreq || freq;
+      const waveType = options.waveType || "square";
+
+      osc.type = waveType;
+      osc.frequency.setValueAtTime(freq, now);
+      osc.frequency.exponentialRampToValueAtTime(endFreq, now + (durationMs / 1000));
+      gain.gain.setValueAtTime(0.0001, now);
+      gain.gain.exponentialRampToValueAtTime(gainValue, now + 0.012);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + (durationMs / 1000));
+
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start(now);
+      osc.stop(now + (durationMs / 1000) + 0.02);
+    }
+
+    function playWhistlePause() {
+      playWhistleBeep(1200);
+    }
+
+    function playWhistleResume() {
+      playWhistleBeep(1400);
+    }
+
+    function playAlertBeep() {
+      ensureAudioContext();
+      tone(1100, 120, 0.32, 0);
+      tone(900, 120, 0.30, 0.14);
+      tone(1100, 120, 0.32, 0.28);
+    }
+
+    function playPenaltyStartBeep() {
+      playFlatBeep(1250, 0.1, 0.28, 0);
+      playFlatBeep(1450, 0.1, 0.28, 0.12);
+    }
+
+    function playPenaltyDoneBeep() {
+      playFlatBeep(1100, 0.12, 0.32, 0);
+      playFlatBeep(900, 0.12, 0.30, 0.14);
+      playFlatBeep(1100, 0.12, 0.32, 0.28);
+    }
+
+    function playCountdownBeep() {
+      playFlatBeep(1600, 0.1, 0.30, 0, "square");
+    }
+
+    function speakIfNeeded(text) {
+      if (state.settings.alertMode !== "soundVoice") return;
+      if (!("speechSynthesis" in window)) return;
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = "ru-RU";
+      utterance.rate = 1.0;
+      utterance.pitch = 1.0;
+      utterance.volume = 1.0;
+      window.speechSynthesis.cancel();
+      window.speechSynthesis.speak(utterance);
+    }
+
+    function speakMainCommandAfterSound(text) {
+      if (mainSpeechTimerId !== null) {
+        window.clearTimeout(mainSpeechTimerId);
+      }
+      mainSpeechTimerId = window.setTimeout(() => {
+        speakIfNeeded(text);
+        mainSpeechTimerId = null;
+      }, 720);
+    }
+
+    function notifyPenaltyDone(color) {
+      playPenaltyDoneBeep();
+      if (color === "red") {
+        speakIfNeeded("Штрафное время красного истекло");
+      } else {
+        speakIfNeeded("Штрафное время синего истекло");
+      }
+    }
+
+    function setStatus(text) {
+      ui.statusText.textContent = text || "";
+    }
+
+    function pauseTimer(timerObj, markPausedByMain = false) {
+      if (!timerObj.isRunning || !timerObj.targetEndTs) return;
+      timerObj.remainingMs = Math.max(0, timerObj.targetEndTs - Date.now());
+      timerObj.isRunning = false;
+      timerObj.targetEndTs = null;
+      if (markPausedByMain) {
+        timerObj.pausedByMain = true;
+      }
+    }
+
+    function resumeTimerIfPausedByMain(timerObj) {
+      if (!timerObj.pausedByMain || timerObj.isRunning || timerObj.remainingMs <= 0) return;
+      timerObj.isRunning = true;
+      timerObj.targetEndTs = Date.now() + timerObj.remainingMs;
+      timerObj.pausedByMain = false;
+    }
+
+    function startMainTimer() {
+      state.main.isRunning = true;
+      state.main.targetEndTs = Date.now() + state.main.remainingMs;
+      state.main.alertedDone = false;
+      resumeTimerIfPausedByMain(state.redPenalty);
+      resumeTimerIfPausedByMain(state.bluePenalty);
+      mainLastCountdownBeepSecond = null;
+      playWhistleResume();
+      speakMainCommandAfterSound("Старт");
+      setStatus("Таймер запущен");
+      logAction("Главный таймер запущен");
+      saveState();
+    }
+
+    function pauseMainTimer() {
+      state.main.remainingMs = Math.max(0, state.main.targetEndTs - Date.now());
+      state.main.isRunning = false;
+      state.main.targetEndTs = null;
+      state.main.alertedDone = false;
+      pauseTimer(state.redPenalty, true);
+      pauseTimer(state.bluePenalty, true);
+      mainLastCountdownBeepSecond = null;
+      playWhistlePause();
+      speakMainCommandAfterSound("Стоп");
+      setStatus("Таймер на паузе");
+      logAction("Главный таймер поставлен на паузу");
+      saveState();
+    }
+
+    function resetMainTimer() {
+      const ok = window.confirm("Сбросить главный таймер полностью?");
+      if (!ok) return;
+      state.main.isRunning = false;
+      state.main.targetEndTs = null;
+      state.main.remainingMs = state.main.setSeconds * 1000;
+      state.main.alertedDone = false;
+      mainLastCountdownBeepSecond = null;
+      setStatus("Главный таймер сброшен");
+      logAction("Главный таймер сброшен");
+      saveState();
+      render();
+    }
+
+    function startPenalty(timerObj, teamName) {
+      timerObj.remainingMs = timerObj.durationMs;
+      timerObj.isRunning = true;
+      timerObj.targetEndTs = Date.now() + timerObj.durationMs;
+      timerObj.alertedDone = false;
+      timerObj.pausedByMain = false;
+      playPenaltyStartBeep();
+      logAction(`Запущен штрафной таймер: ${teamName}`);
+      saveState();
+      render();
+    }
+
+    function startRestartTimer() {
+      state.restart.remainingMs = state.restart.durationMs;
+      state.restart.isRunning = true;
+      state.restart.targetEndTs = Date.now() + state.restart.durationMs;
+      state.restart.alertedDone = false;
+      logAction("Запущен таймер контроля до рестарта (10с)");
+      saveState();
+      render();
+    }
+
+    function adjustScore(team, delta) {
+      const next = Math.max(0, state.score[team] + delta);
+      state.score[team] = next;
+
+      const teamLabel = team === "red" ? "Красные" : "Синие";
+      const actionLabel = delta >= 0 ? "Гол засчитан" : "Счёт уменьшен";
+      logAction(`${actionLabel}: ${teamLabel} (${state.score.red}:${state.score.blue})`);
+      saveState();
+      render();
+    }
+
+    function updateRunningTimer(timerObj, onDone) {
+      if (!timerObj.isRunning || !timerObj.targetEndTs) return;
+      timerObj.remainingMs = Math.max(0, timerObj.targetEndTs - Date.now());
+      if (timerObj.remainingMs <= 0) {
+        timerObj.remainingMs = 0;
+        timerObj.isRunning = false;
+        timerObj.targetEndTs = null;
+        if (!timerObj.alertedDone) {
+          timerObj.alertedDone = true;
+          onDone();
+        }
+      }
+    }
+
+    function tick() {
+      updateRunningTimer(state.main, () => {
+        mainLastCountdownBeepSecond = null;
+        setStatus("Главный таймер завершен.");
+        playDoubleWhistleBeep(1400);
+        logAction("Главный таймер завершен");
+      });
+      if (state.main.isRunning && state.main.remainingMs > 0 && state.main.remainingMs <= 10000) {
+        const currentSecond = Math.ceil(state.main.remainingMs / 1000);
+        if (currentSecond !== mainLastCountdownBeepSecond) {
+          mainLastCountdownBeepSecond = currentSecond;
+          playCountdownBeep();
+        }
+      } else if (!state.main.isRunning || state.main.remainingMs > 10000) {
+        mainLastCountdownBeepSecond = null;
+      }
+      if (!state.main.isRunning) {
+        pauseTimer(state.redPenalty, true);
+        pauseTimer(state.bluePenalty, true);
+      } else {
+        updateRunningTimer(state.redPenalty, () => {
+          notifyPenaltyDone("red");
+          logAction("Штрафной таймер красных завершен");
+        });
+        updateRunningTimer(state.bluePenalty, () => {
+          notifyPenaltyDone("blue");
+          logAction("Штрафной таймер синих завершен");
+        });
+      }
+      updateRunningTimer(state.restart, () => {
+        playAlertBeep();
+        logAction("Таймер контроля до рестарта завершен");
+      });
+      saveState();
+      render();
+    }
+
+    function setCircleProgress(circleEl, remainingMs, durationMs) {
+      const ratio = durationMs > 0 ? (remainingMs / durationMs) : 0;
+      const clamped = clamp(ratio, 0, 1);
+      circleEl.style.setProperty("--progress", (clamped * 100).toFixed(2) + "%");
+    }
+
+    function render() {
+      ui.mainClock.textContent = formatMmSs(state.main.remainingMs);
+      ui.mainToggleBtn.textContent = state.main.isRunning ? "Пауза" : "Старт";
+      ui.mainToggleBtn.classList.toggle("paused", state.main.isRunning);
+      ui.mainSetRange.disabled = state.main.isRunning;
+      ui.mainSetRange.value = String(state.main.setSeconds);
+      ui.rangeLabel.textContent = formatMmSs(state.main.setSeconds * 1000);
+
+      ui.alertMode.value = state.settings.alertMode;
+
+      ui.redSec.textContent = formatSeconds(state.redPenalty.remainingMs);
+      ui.blueSec.textContent = formatSeconds(state.bluePenalty.remainingMs);
+      setCircleProgress(ui.redCircle, state.redPenalty.remainingMs, state.redPenalty.durationMs);
+      setCircleProgress(ui.blueCircle, state.bluePenalty.remainingMs, state.bluePenalty.durationMs);
+
+      ui.restartSec.textContent = formatSeconds(state.restart.remainingMs);
+      setCircleProgress(ui.restartCircle, state.restart.remainingMs, state.restart.durationMs);
+      ui.redScore.textContent = String(state.score.red);
+      ui.blueScore.textContent = String(state.score.blue);
+    }
+
+    function addDomListeners() {
+      document.body.addEventListener("click", ensureAudioContext, { once: true });
+      document.body.addEventListener("keydown", ensureAudioContext, { once: true });
+
+      ui.mainToggleBtn.addEventListener("click", () => {
+        if (state.main.isRunning) {
+          pauseMainTimer();
+        } else {
+          startMainTimer();
+        }
+        render();
+      });
+
+      ui.mainResetBtn.addEventListener("click", resetMainTimer);
+
+      ui.mainSetRange.addEventListener("input", (e) => {
+        const sec = clamp(Number(e.target.value), MAIN_MIN_SECONDS, MAIN_MAX_SECONDS);
+        state.main.setSeconds = sec;
+        if (!state.main.isRunning) {
+          state.main.remainingMs = sec * 1000;
+        }
+        saveState();
+        render();
+      });
+      ui.mainSetRange.addEventListener("change", () => {
+        logAction(`Установлено время главного таймера: ${formatMmSs(state.main.setSeconds * 1000)}`);
+      });
+
+      ui.testWhistleBtn.addEventListener("click", () => {
+        playWhistleResume();
+        logAction("Тест свистка");
+      });
+
+      ui.alertMode.addEventListener("change", (e) => {
+        state.settings.alertMode = e.target.value;
+        logAction(`Режим оповещения: ${e.target.value === "soundVoice" ? "звук + голос" : "только звук"}`);
+        saveState();
+      });
+
+      ui.redCircle.addEventListener("click", () => startPenalty(state.redPenalty, "Красные"));
+      ui.blueCircle.addEventListener("click", () => startPenalty(state.bluePenalty, "Синие"));
+      ui.redCircle.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") startPenalty(state.redPenalty, "Красные"); });
+      ui.blueCircle.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") startPenalty(state.bluePenalty, "Синие"); });
+
+      ui.restartCircle.addEventListener("click", startRestartTimer);
+      ui.restartCircle.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" || e.key === " ") startRestartTimer();
+      });
+
+      ui.redPlus.addEventListener("click", () => adjustScore("red", 1));
+      ui.redMinus.addEventListener("click", () => adjustScore("red", -1));
+      ui.bluePlus.addEventListener("click", () => adjustScore("blue", 1));
+      ui.blueMinus.addEventListener("click", () => adjustScore("blue", -1));
+
+      ui.clearLogBtn.addEventListener("click", () => {
+        actionLog.length = 0;
+        renderActionLog();
+        logAction("Журнал очищен");
+      });
+    }
+
+    function init() {
+      addDomListeners();
+      render();
+      logAction("Приложение запущено");
+      intervalId = window.setInterval(tick, 100);
+    }
+
+    init();
+  </script>
+</body>
+</html>
