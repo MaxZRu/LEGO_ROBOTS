@@ -1,0 +1,399 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Презентация — Категория 4 «Футбол»</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      --bg: #0f172a;
+      --panel: #111827;
+      --text: #e5e7eb;
+      --muted: #9ca3af;
+      --border: #374151;
+      --accent: #2563eb;
+      --accent-2: #1d4ed8;
+      --ok: #16a34a;
+      --warn: #ea580c;
+      --danger: #dc2626;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: Arial, Helvetica, sans-serif;
+      background: radial-gradient(1200px 500px at 50% -120px, #1e293b, var(--bg));
+      color: var(--text);
+      display: grid;
+      place-items: center;
+      padding: 24px;
+    }
+
+    .deck {
+      width: min(1080px, 100%);
+      background: color-mix(in srgb, var(--panel) 92%, black);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 20px 45px rgba(0, 0, 0, 0.35);
+    }
+
+    .top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--border);
+      background: rgba(15, 23, 42, 0.6);
+    }
+
+    .title {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--muted);
+    }
+
+    .counter {
+      font-size: 14px;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+
+    .slides {
+      position: relative;
+      min-height: 600px;
+    }
+
+    .slide {
+      display: none;
+      padding: clamp(22px, 3vw, 36px);
+    }
+
+    .slide.active {
+      display: block;
+    }
+
+    h1, h2 {
+      margin-top: 0;
+      margin-bottom: 12px;
+      line-height: 1.2;
+    }
+
+    h1 {
+      font-size: clamp(28px, 4vw, 42px);
+    }
+
+    h2 {
+      font-size: clamp(24px, 3.3vw, 34px);
+    }
+
+    .lead {
+      color: var(--muted);
+      font-size: clamp(16px, 2vw, 20px);
+      margin: 0 0 18px 0;
+    }
+
+    ul {
+      margin: 0;
+      padding-left: 22px;
+      display: grid;
+      gap: 8px;
+      font-size: clamp(16px, 2vw, 21px);
+      line-height: 1.35;
+    }
+
+    .cols {
+      display: grid;
+      gap: 14px;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    }
+
+    .card {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px;
+      background: rgba(17, 24, 39, 0.6);
+    }
+
+    .card h3 {
+      margin: 0 0 8px 0;
+      font-size: 20px;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 4px 8px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+      margin-bottom: 8px;
+      border: 1px solid color-mix(in srgb, white 25%, transparent);
+    }
+
+    .ok { background: color-mix(in srgb, var(--ok) 30%, transparent); }
+    .warn { background: color-mix(in srgb, var(--warn) 30%, transparent); }
+    .danger { background: color-mix(in srgb, var(--danger) 30%, transparent); }
+
+    .hint {
+      margin-top: 14px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .controls {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 16px;
+      border-top: 1px solid var(--border);
+      background: rgba(15, 23, 42, 0.55);
+    }
+
+    .buttons {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    button {
+      border: 1px solid color-mix(in srgb, white 18%, transparent);
+      border-radius: 10px;
+      padding: 10px 14px;
+      color: #fff;
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    button:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+
+    .progress {
+      width: min(380px, 42vw);
+      height: 8px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: rgba(148, 163, 184, 0.2);
+      overflow: hidden;
+    }
+
+    .bar {
+      width: 0%;
+      height: 100%;
+      background: linear-gradient(90deg, #3b82f6, #22c55e);
+      transition: width 0.2s ease;
+    }
+  </style>
+</head>
+<body>
+  <main class="deck">
+    <header class="top">
+      <div class="title">Категория 4 «Футбол» — презентация для участников</div>
+      <div class="counter" id="counter">Слайд 1 / 10</div>
+    </header>
+
+    <section class="slides">
+      <article class="slide active">
+        <h1>Футбол LEGO 2x2</h1>
+        <p class="lead">Краткая инструкция для участников: требования, проверка роботов, ход матча и важные нюансы судейства.</p>
+        <ul>
+          <li>Формат игры: 2 робота на поле + 1 запасной робот в команде.</li>
+          <li>Главная цель: забить больше голов за матч, чем соперник.</li>
+          <li>Решения судьи во время матча являются окончательными.</li>
+        </ul>
+        <p class="hint">Источник: правила категории 4 «Футбол».</p>
+      </article>
+
+      <article class="slide">
+        <h2>1) Поле, мяч и базовые условия</h2>
+        <ul>
+          <li>Поле зеленое, линии белые, ширина разметки 20-25 мм, ворота шириной 45 см.</li>
+          <li>Рекомендуемые размеры поля: 2430 x 1830 мм.</li>
+          <li>Мяч: стандартный теннисный, диаметр 67 мм, масса 58.5 г.</li>
+          <li>Операторы находятся за своими воротами и не заходят в поле во время игры.</li>
+        </ul>
+      </article>
+
+      <article class="slide">
+        <h2>2) Требования к роботу: конструкция</h2>
+        <ul>
+          <li>Робот должен помещаться в цилиндр 22 см (диаметр) x 22 см (высота), с полностью выдвинутыми подвижными частями.</li>
+          <li>Масса робота: не более 1 кг.</li>
+          <li>Обязательны флагшток и маркировка команды/номера робота.</li>
+          <li>Конструкция только из LEGO-деталей без модификаций и без сторонних крепежей/клея.</li>
+          <li>Должна быть ручка, за которую судья может безопасно взять робота.</li>
+        </ul>
+      </article>
+
+      <article class="slide">
+        <h2>3) Требования к роботу: электроника и механика</h2>
+        <ul>
+          <li>Контроллер и двигатели — из LEGO MINDSTORMS.</li>
+          <li>Разрешены кабели любых производителей при соблюдении требований безопасности и совместимости.</li>
+          <li>Питание: серая аккумуляторная батарея LEGO или 6 батарей AA 1.5V.</li>
+          <li>У каждого робота должен быть ударный механизм, способный выбить мяч за центральный круг из центра поля.</li>
+          <li>Запрещен захват мяча: перекрытие более 50% мяча считается нарушением.</li>
+        </ul>
+      </article>
+
+      <article class="slide">
+        <h2>4) Как проходит проверка роботов</h2>
+        <div class="cols">
+          <div class="card">
+            <span class="badge ok">Перед матчем</span>
+            <ul>
+              <li>Проверка габаритов, массы и маркировки робота.</li>
+              <li>Проверка легальности деталей и питания.</li>
+              <li>Проверка наличия и работы ударного механизма.</li>
+            </ul>
+          </div>
+          <div class="card">
+            <span class="badge warn">Во время соревнования</span>
+            <ul>
+              <li>Судья контролирует соответствие правилам в любой момент.</li>
+              <li>При сомнениях робот может быть повторно проверен.</li>
+              <li>Если выявлено нарушение, команда теряет результаты матчей с этим роботом.</li>
+            </ul>
+          </div>
+        </div>
+      </article>
+
+      <article class="slide">
+        <h2>5) Структура соревнований и матчей</h2>
+        <ul>
+          <li>Схема турнира: олимпийская, двойное выбывание или комбинированная по решению организаторов.</li>
+          <li>При большом числе участников возможны отборочные матчи.</li>
+          <li>Матч: 2 тайма по 5 минут, перерыв до 5 минут.</li>
+          <li>Если ничья недопустима: доп. тайм до первого гола (до 3 минут), затем возможен матч 1x1.</li>
+        </ul>
+      </article>
+
+      <article class="slide">
+        <h2>6) Старт матча и первый удар</h2>
+        <ul>
+          <li>Перед игрой судья проводит жеребьевку монеткой.</li>
+          <li>Команда с первым ударом начинает с мяча в центре поля.</li>
+          <li>Остальные роботы стоят частью корпуса в своей штрафной площади.</li>
+          <li>Ранний старт или опоздание робота: удаление на 1 минуту (статус «поврежденный»).</li>
+          <li>Гол сразу после начального удара засчитывается.</li>
+        </ul>
+      </article>
+
+      <article class="slide">
+        <h2>7) Голы, рестарты, замены и перезапуск</h2>
+        <ul>
+          <li>Гол: мяч полностью пересек линию ворот и ударился о заднюю стенку ворот.</li>
+          <li>После гола мяч ставится в центр, вводит команда, которая пропустила.</li>
+          <li>Рестарт: если мяч застрял или никто не может выйти на мяч до ~10 секунд.</li>
+          <li>Замены запасным роботом разрешены с разрешения судьи, лимита по заменам нет.</li>
+          <li>Перезапуск из-за потери связи, разряда или поломки возможен только по решению судьи, без остановки матча.</li>
+        </ul>
+      </article>
+
+      <article class="slide">
+        <h2>8) Частые нарушения и санкции</h2>
+        <div class="cols">
+          <div class="card">
+            <span class="badge danger">На поле</span>
+            <ul>
+              <li>Касание робота без разрешения судьи.</li>
+              <li>Преждевременный старт до свистка.</li>
+              <li>Удержание/захват мяча конструкцией робота.</li>
+              <li>Двойная оборона в штрафной.</li>
+            </ul>
+          </div>
+          <div class="card">
+            <span class="badge warn">Последствия</span>
+            <ul>
+              <li>Удаление робота на 1 минуту.</li>
+              <li>Штрафное время 2 минуты.</li>
+              <li>Отмена гола при «проталкивании».</li>
+              <li>Техническое поражение, если команда не выставила ни одного робота к началу.</li>
+            </ul>
+          </div>
+        </div>
+      </article>
+
+      <article class="slide">
+        <h2>9) Нюансы по вратарю и спорным ситуациям</h2>
+        <ul>
+          <li>Вратарь должен двигаться во всех направлениях и реагировать на мяч движением вперед.</li>
+          <li>Если вратарь не реагирует корректно, он может быть признан «поврежденным».</li>
+          <li>Если роботы сцепились, судья разделяет их минимальным движением.</li>
+          <li>Для разъяснения правил капитан запрашивает «Судейский перерыв»; таймер останавливается.</li>
+          <li>Видео как доказательство не принимается, финальное решение за судейской коллегией.</li>
+        </ul>
+      </article>
+
+      <article class="slide">
+        <h2>10) Чек-лист участника перед выходом на матч</h2>
+        <ul>
+          <li>Проверены габариты, вес, маркировка и питание роботов.</li>
+          <li>Ударный механизм исправен, мяч не захватывается конструкцией.</li>
+          <li>Операторы знают стартовые позиции, сигналы свистка и процедуру рестарта.</li>
+          <li>Запасной робот готов к замене и также соответствует правилам.</li>
+          <li>Капитан знает порядок обращения к судье при спорной ситуации.</li>
+        </ul>
+        <p class="lead" style="margin-top:14px;">Главный совет: играйте честно, действуйте быстро по командам судьи и держите роботов в полной готовности весь турнир.</p>
+      </article>
+    </section>
+
+    <footer class="controls">
+      <div class="buttons">
+        <button id="prevBtn" type="button">Назад</button>
+        <button id="nextBtn" type="button">Вперед</button>
+      </div>
+      <div class="progress" aria-hidden="true">
+        <div class="bar" id="bar"></div>
+      </div>
+    </footer>
+  </main>
+
+  <script>
+    const slides = [...document.querySelectorAll(".slide")];
+    const counter = document.getElementById("counter");
+    const bar = document.getElementById("bar");
+    const prevBtn = document.getElementById("prevBtn");
+    const nextBtn = document.getElementById("nextBtn");
+    let current = 0;
+
+    function render() {
+      slides.forEach((slide, idx) => slide.classList.toggle("active", idx === current));
+      counter.textContent = `Слайд ${current + 1} / ${slides.length}`;
+      bar.style.width = `${((current + 1) / slides.length) * 100}%`;
+      prevBtn.disabled = current === 0;
+      nextBtn.disabled = current === slides.length - 1;
+    }
+
+    function next() {
+      if (current < slides.length - 1) {
+        current += 1;
+        render();
+      }
+    }
+
+    function prev() {
+      if (current > 0) {
+        current -= 1;
+        render();
+      }
+    }
+
+    prevBtn.addEventListener("click", prev);
+    nextBtn.addEventListener("click", next);
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "ArrowRight" || event.key === "PageDown") next();
+      if (event.key === "ArrowLeft" || event.key === "PageUp") prev();
+    });
+
+    render();
+  </script>
+</body>
+</html>
